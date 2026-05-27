@@ -166,7 +166,9 @@ function rrect(ctx,x,y,w,h,r,fill){
 
 // contain: 비율 유지, 여백 흰색
 function drawContain(ctx,img,x,y,w,h){
-  const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+  const iw=img.naturalWidth||img.width||0;
+  const ih=img.naturalHeight||img.height||0;
+  if(!iw||!ih){drawPH(ctx,x,y,w,h);return;}
   const s=Math.min(w/iw,h/ih);
   const nw=iw*s, nh=ih*s;
   ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);
@@ -175,10 +177,13 @@ function drawContain(ctx,img,x,y,w,h){
 
 function drawPH(ctx,x,y,w,h){
   ctx.fillStyle='#efefef';ctx.fillRect(x,y,w,h);
-  ctx.strokeStyle='#ddd';ctx.lineWidth=2;ctx.strokeRect(x+1,y+1,w-2,h-2);
-  ctx.fillStyle='#ccc';ctx.font='28px sans-serif';
+  ctx.strokeStyle='#ddd';ctx.lineWidth=3;ctx.strokeRect(x+2,y+2,w-4,h-4);
+  // 이모지 대신 텍스트로 표시 (Canvas 이모지 렌더링 불안정)
+  ctx.fillStyle='#bbb';
+  const fsz=Math.min(w,h)*0.12;
+  ctx.font=`600 ${fsz}px ${FONT}`;
   ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText('🖼',x+w/2,y+h/2);
+  ctx.fillText('이미지 없음',x+w/2,y+h/2);
   ctx.textAlign='left';ctx.textBaseline='top';
 }
 
