@@ -278,7 +278,7 @@ function renderText(ctx,tx,ty,maxW,prod){
 
 // ══ 흰색 박스 1개 (상품 1개) 렌더링 ══════════════════════════════════════════
 // x1,y1,x2,y2: 박스 영역
-function renderWhiteBox(ctx,x1,y1,x2,y2,prod,badgeColor,badgeSize){
+function renderWhiteBox(ctx,x1,y1,x2,y2,prod,badgeColor,badgeTextColor,badgeSize){
   const cw=x2-x1, ch=y2-y1, pad=CARD_PAD;
   rrect(ctx,x1,y1,cw,ch,CARD_R,WHITE);
 
@@ -295,7 +295,7 @@ function renderWhiteBox(ctx,x1,y1,x2,y2,prod,badgeColor,badgeSize){
     const btw=ctx.measureText(badge).width;
     const bph=bsz+10, bpw=btw+20;
     rrect(ctx,ix,iy,bpw,bph,bph/2,badgeColor);
-    ctx.fillStyle=isLight(badgeColor)?'#222':WHITE;
+    ctx.fillStyle=badgeTextColor||WHITE;
     ctx.textBaseline='middle';
     ctx.fillText(badge,ix+10,iy+bph/2);
   }
@@ -304,22 +304,19 @@ function renderWhiteBox(ctx,x1,y1,x2,y2,prod,badgeColor,badgeSize){
 }
 
 // ══ 카드 전체 렌더링 ══════════════════════════════════════════════════════════
-function renderCardImage(ctx,products,bgColor,badgeColor,badgeSize){
-  const bg=bgColor||BG;
-  const bc=badgeColor||ORANGE;
-  const bsz=badgeSize||20;
+function renderCardImage(ctx,products,bgColor,badgeColor,badgeTextColor,badgeSize){
+  const bg=bgColor||BG, bc=badgeColor||ORANGE;
+  const btc=badgeTextColor||WHITE, bsz=badgeSize||20;
   ctx.fillStyle=bg;ctx.fillRect(0,0,CW,CH);
   renderHeader(ctx,
     document.getElementById('period').value,
     document.getElementById('brand').value);
-
   const n=products.length;if(!n)return;
   const avail=CH-HEADER_H-CARD_GAP-BOTTOM;
   const boxH=Math.floor((avail-(n-1)*CARD_GAP)/n);
-
   let cy=HEADER_H+CARD_GAP;
   for(const prod of products){
-    renderWhiteBox(ctx,CARD_MX,cy,CW-CARD_MX,cy+boxH,prod,bc,bsz);
+    renderWhiteBox(ctx,CARD_MX,cy,CW-CARD_MX,cy+boxH,prod,bc,btc,bsz);
     cy+=boxH+CARD_GAP;
   }
 }
@@ -347,7 +344,7 @@ async function renderCurrent(){
   const ctx=cv.getContext('2d');
   ctx.clearRect(0,0,CW,CH);
   const card=cards[idx];
-  renderCardImage(ctx,card.products,card.bgColor,card.badgeColor,card.badgeSize);
+  renderCardImage(ctx,card.products,card.bgColor,card.badgeColor,card.badgeTextColor,card.badgeSize);
 }
 
 function schedule(){clearTimeout(timer);timer=setTimeout(renderCurrent,500);}
@@ -374,6 +371,7 @@ function collectCards(){
     const cid=block.id.replace('card-','');
     const bgColor=document.getElementById(`bg-color-${cid}`)?.value||'#F37E1F';
     const badgeColor=document.getElementById(`badge-color-${cid}`)?.value||'#F37E1F';
+    const badgeTextColor=document.getElementById(`badge-text-color-${cid}`)?.value||'#ffffff';
     const badgeSize=parseInt(document.getElementById(`badge-size-${cid}`)?.value)||20;
     const prods=[];
     block.querySelectorAll('.prod-box').forEach(box=>{
@@ -388,7 +386,7 @@ function collectCards(){
         sale_price:parseInt(document.getElementById(`sale-${pid}`)?.value)||0,
       });
     });
-    if(prods.length)cards.push({products:prods, bgColor, badgeColor, badgeSize});
+    if(prods.length)cards.push({products:prods, bgColor, badgeColor, badgeTextColor, badgeSize});
   });
   return cards;
 }
@@ -426,11 +424,8 @@ function addCard(){
         <input type="color" id="badge-color-${cid}" value="#F37E1F" oninput="onColorChange(${cid})">
       </div>
       <div class="color-item">
-        뱃지 폰트
-        <input type="number" id="badge-size-${cid}" value="20" min="10" max="60"
-               style="width:54px;border:1.5px solid #ddd;border-radius:6px;padding:3px 6px;font-size:12px;font-family:inherit;outline:none"
-               oninput="onColorChange(${cid})">
-        <span style="font-size:10px;color:#bbb">px</span>
+        뱃지 텍스트색
+        <input type="color" id="badge-text-color-${cid}" value="#ffffff" oninput="onColorChange(${cid})">
       </div>
       <div class="color-item" style="margin-left:4px;color:#bbb;font-weight:400;font-size:10px">
         ※ 카드별 독립 설정
@@ -530,7 +525,7 @@ async function downloadAll(){
   for(let i=0;i<cards.length;i++){
     ctx.clearRect(0,0,CW,CH);
     const card=cards[i];
-    renderCardImage(ctx,card.products,card.bgColor,card.badgeColor,card.badgeSize);
+    renderCardImage(ctx,card.products,card.bgColor,card.badgeColor,card.badgeTextColor,card.badgeSize);
     await new Promise(r=>setTimeout(r,100));
     const a=document.createElement('a');
     a.download=`instagram_card_${i+1}.jpg`;
