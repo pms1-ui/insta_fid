@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>인스타그램 카드 생성기</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f0f0f0;font-size:13px;color:#222}
+.wrap{display:flex;height:100vh;overflow:hidden}
+.left{flex:1;overflow-y:auto;padding:14px 16px;min-width:0}
+.right{width:380px;flex-shrink:0;background:#1c1c1c;display:flex;flex-direction:column;align-items:center;padding:16px;gap:10px;overflow-y:auto}
+.panel{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.panel-title{font-size:12px;font-weight:700;color:#F37E1F;margin-bottom:10px;letter-spacing:.5px}
+.srow{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.srow label.lbl{font-size:12px;color:#555;white-space:nowrap;width:110px;flex-shrink:0}
+.srow input{flex:1;border:1px solid #ddd;border-radius:6px;padding:6px 9px;font-size:13px;outline:none}
+.srow input:focus{border-color:#F37E1F}
+.fbtn{display:inline-flex;align-items:center;gap:5px;background:#f5f5f5;border:1px solid #ddd;border-radius:6px;padding:5px 11px;cursor:pointer;font-size:12px;white-space:nowrap}
+.fbtn:hover{background:#fff3e0;border-color:#F37E1F}
+.fname{font-size:11px;color:#999;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-block{background:#fff;border-radius:10px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.1);overflow:hidden}
+.card-head{display:flex;align-items:center;justify-content:space-between;background:#fff8f0;padding:9px 14px;border-bottom:1px solid #ffe0c0}
+.card-head-title{font-weight:700;font-size:13px;color:#c05a00}
+.card-head-btns{display:flex;gap:6px}
+.card-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.prod-row{display:flex;gap:10px;align-items:flex-start;padding:10px;background:#fafafa;border-radius:8px;border:1px solid #eee}
+.prod-img-col{flex-shrink:0;width:110px}
+.thumb{width:110px;height:80px;border-radius:6px;border:2px dashed #ddd;background:#f5f5f5;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;font-size:11px;color:#bbb;gap:3px}
+.thumb:hover{border-color:#F37E1F;color:#F37E1F}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.prod-fields{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.prod-fields .full{grid-column:1/-1}
+.flbl{font-size:11px;color:#888;margin-bottom:3px}
+.prod-fields input{width:100%;border:1px solid #ddd;border-radius:6px;padding:5px 8px;font-size:12px;outline:none}
+.prod-fields input:focus{border-color:#F37E1F}
+.prod-del{flex-shrink:0;padding-top:2px}
+.btn{border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.btn-or{background:#F37E1F;color:#fff}.btn-or:hover{background:#d96a10}
+.btn-gr{background:#4CAF50;color:#fff}.btn-gr:hover{background:#388E3C}
+.btn-rd{background:#f44336;color:#fff;padding:5px 9px;font-size:11px}.btn-rd:hover{background:#c62828}
+.btn-bl{background:#2196F3;color:#fff}.btn-bl:hover{background:#1565C0}
+.btn-gy{background:#e8e8e8;color:#444}.btn-gy:hover{background:#d0d0d0}
+.btn-ap{background:#fff3e0;color:#F37E1F;border:1px solid #F37E1F;border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;font-weight:600}
+.btn-ap:hover{background:#ffe0b2}
+.actions{display:flex;gap:8px;margin-top:4px;padding-bottom:20px}
+.prev-title{color:#888;font-size:11px;letter-spacing:.3px}
+.prev-box{position:relative}
+#canvas{border-radius:8px;display:block;width:270px;height:338px}
+.ov{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;border-radius:8px}
+.ov.show{display:flex}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sp{width:22px;height:22px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+.rbtns{display:flex;flex-direction:column;gap:8px;width:270px}
+.rbtns .btn{width:100%;justify-content:center;padding:9px}
+.pinfo{color:#666;font-size:11px;text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="left">
+  <div class="panel">
+    <div class="panel-title">기본 설정</div>
+    <div class="srow"><label class="lbl">진행기간</label>
+      <input type="text" id="period" value="26. 05. 13 11:00 - 05. 16 23:59"></div>
+    <div class="srow"><label class="lbl">업체/인플루언서명</label>
+      <input type="text" id="brand" value="레이첼민선"></div>
+    <div class="srow"><label class="lbl">로고 이미지</label>
+      <label class="fbtn" for="logo-file">📎 로고 선택</label>
+      <input type="file" id="logo-file" accept="image/*" style="display:none">
+      <span class="fname" id="logo-name">선택 안 됨</span></div>
+  </div>
+  <div id="cards"></div>
+  <div class="actions">
+    <button class="btn btn-gr" onclick="addCard()">＋ 카드 추가</button>
+    <button class="btn btn-gy" onclick="render()">🔄 미리보기 갱신</button>
+  </div>
+</div>
+<div class="right">
+  <div class="prev-title">실시간 미리보기</div>
+  <div class="prev-box">
+    <canvas id="canvas" width="1080" height="1350"></canvas>
+    <div class="ov" id="ov"><div class="sp"></div></div>
+  </div>
+  <div class="rbtns">
+    <button class="btn btn-bl" onclick="fullView()">🔍 전체 크기 보기</button>
+    <button class="btn btn-or" onclick="download()">⬇ 이미지 다운로드</button>
+  </div>
+  <div class="pinfo">1080 × 1350 px<br>입력 시 자동 갱신</div>
+</div>
+</div>
+
+<script>
+// ── 상수 (레퍼런스 픽셀 측정값) ──────────────────────────────────────────────
+const W=1080, H=1350;
+const BG='#F37E1F', WHITE='#fff', DARK='#1c1c1c', GRAY='#969696', ORANGE='#F37E1F';
+const DATE_COLOR='rgba(255,220,175,1)';
+const DATE_CY=107, BRAND_Y=186, HEADER_H=338;
+const CARD_MX=30, CARD_R=22, CARD_GAP=24, BOTTOM=7;
+
+// ── 상태 ──────────────────────────────────────────────────────────────────────
+let logoImg=null, cardSeq=0, prodSeq=0, timer=null;
+const prodImages={}; // pid -> HTMLImageElement
+
+// ── 폰트 로드 (Noto Sans KR) ─────────────────────────────────────────────────
+const fontLoaded = (async()=>{
+  try{
+    await document.fonts.load('bold 80px "Noto Sans KR"');
+    await document.fonts.load('80px "Noto Sans KR"');
+  }catch(e){}
+})();
+
+// ── Canvas 유틸 ───────────────────────────────────────────────────────────────
+function rrect(ctx, x,y,w,h,r,fill){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r);
+  ctx.closePath();
+  if(fill){ctx.fillStyle=fill;ctx.fill();}
+}
+
+function measureText(ctx,text,fstr){
+  ctx.font=fstr; return ctx.measureText(text).width;
+}
+
+function wrapText(ctx,text,fstr,maxW){
+  // \n 우선 처리
+  const parts=text.replace(/\\n/g,'\n').split('\n');
+  const lines=[];
+  for(const part of parts){
+    if(lines.length>=2) break;
+    let cur='';
+    ctx.font=fstr;
+    for(const ch of part){
+      const test=cur+ch;
+      if(ctx.measureText(test).width>maxW && cur){
+        lines.push(cur); cur=ch;
+        if(lines.length>=2) break;
+      } else cur=test;
+    }
+    if(cur && lines.length<2) lines.push(cur);
+  }
+  return lines.slice(0,2);
+}
+
+function drawImage(ctx,imgEl,x,y,w,h){
+  // center-crop
+  const iw=imgEl.naturalWidth, ih=imgEl.naturalHeight;
+  const scale=Math.max(w/iw,h/ih);
+  const nw=iw*scale, nh=ih*scale;
+  const sx=(nw-w)/2, sy=(nh-h)/2;
+  ctx.save();
+  rrect(ctx,x,y,w,h,8,null);
+  ctx.clip();
+  ctx.drawImage(imgEl,-sx/scale+x,-sy/scale+y,nw,nh);
+  ctx.restore();
+}
+
+function drawPlaceholder(ctx,x,y,w,h){
+  ctx.fillStyle='#e8e8e8'; ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle='#ccc'; ctx.lineWidth=2;
+  ctx.strokeRect(x+1,y+1,w-2,h-2);
+  ctx.fillStyle='#bbb'; ctx.font='28px sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🖼', x+w/2, y+h/2);
+  ctx.textAlign='left'; ctx.textBaseline='top';
+}
+
+</script>
+
+<script>
+// ── 헤더 렌더링 ───────────────────────────────────────────────────────────────
+function renderHeader(ctx, period, brand){
+  // 날짜
+  const df='28px "Noto Sans KR",sans-serif';
+  ctx.font=df; ctx.fillStyle=DATE_COLOR;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(period, W/2, DATE_CY);
+
+  // 브랜드명
+  const bf='bold 80px "Noto Sans KR",sans-serif';
+  ctx.font=bf; ctx.fillStyle=WHITE;
+  const bw=ctx.measureText(brand).width;
+  const bh=80; // approx font height
+  const brandCY=BRAND_Y+bh/2;
+
+  const xf='60px "Noto Sans KR",sans-serif';
+  ctx.font=xf;
+  const xw=ctx.measureText('×').width;
+
+  let logoW=0;
+  if(logoImg){
+    const lh=82;
+    logoW=Math.round(logoImg.naturalWidth*lh/logoImg.naturalHeight);
+  }
+
+  const gap=30;
+  const totalW=bw+(logoImg?gap+xw+gap+logoW:0);
+  const sx=(W-totalW)/2;
+
+  ctx.font=bf; ctx.fillStyle=WHITE; ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText(brand, sx, BRAND_Y);
+
+  if(logoImg){
+    ctx.font=xf; ctx.fillStyle=WHITE; ctx.textBaseline='middle';
+    ctx.fillText('×', sx+bw+gap, brandCY);
+    const lh=82, lw=logoW;
+    const lx=sx+bw+gap+xw+gap, ly=176;
+    ctx.drawImage(logoImg,lx,ly,lw,lh);
+  }
+  ctx.textAlign='left'; ctx.textBaseline='top';
+}
+
+// ── 텍스트 블록 ───────────────────────────────────────────────────────────────
+function renderTextBlock(ctx, tx, ty, maxW, prod, compact){
+  const nsz=compact?26:34;
+  const nf=`bold ${nsz}px "Noto Sans KR",sans-serif`;
+  const lines=wrapText(ctx, prod.name||'', nf, maxW);
+  ctx.font=nf; ctx.fillStyle=DARK; ctx.textBaseline='top';
+  for(const line of lines){
+    ctx.fillText(line,tx,ty);
+    ty+=nsz+4;
+  }
+  ty+=10;
+
+  // 색상명
+  const color=(prod.color||'').trim();
+  if(color){
+    const csz=compact?18:24;
+    ctx.font=`${csz}px "Noto Sans KR",sans-serif`;
+    ctx.fillStyle=GRAY;
+    ctx.fillText(color,tx,ty);
+    ty+=csz+14;
+  }
+
+  // 할인율 pill + 정가
+  const disc=parseFloat(prod.discount)||0;
+  const orig=parseInt(prod.original_price)||0;
+  const sale=parseInt(prod.sale_price)||0;
+
+  let rowY=ty, cx=tx, pillH=0;
+
+  if(disc>0){
+    const ds=`${Math.round(disc*100)}%`;
+    const dsz=compact?18:24;
+    const df2=`bold ${dsz}px "Noto Sans KR",sans-serif`;
+    ctx.font=df2;
+    const dw=ctx.measureText(ds).width;
+    pillH=dsz+10; const pillW=dw+22;
+    rrect(ctx,cx,rowY,pillW,pillH,pillH/2,ORANGE);
+    ctx.fillStyle=WHITE; ctx.textBaseline='top';
+    ctx.fillText(ds,cx+11,rowY+5);
+    cx+=pillW+12;
+  }
+
+  if(orig>0){
+    const os2=orig.toLocaleString()+'원';
+    const osz=compact?16:22;
+    ctx.font=`${osz}px "Noto Sans KR",sans-serif`;
+    ctx.fillStyle=GRAY;
+    const ow=ctx.measureText(os2).width;
+    const oy=pillH>0?rowY+(pillH-(osz+4))/2:rowY;
+    ctx.fillText(os2,cx,oy);
+    // 취소선
+    ctx.strokeStyle=GRAY; ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(cx,oy+osz/2+2); ctx.lineTo(cx+ow,oy+osz/2+2);
+    ctx.stroke();
+  }
+
+  if(pillH>0||orig>0) ty=rowY+Math.max(pillH,28)+10;
+
+  // 할인가
+  if(sale>0){
+    const ssz=compact?32:44;
+    ctx.font=`bold ${ssz}px "Noto Sans KR",sans-serif`;
+    ctx.fillStyle=DARK; ctx.textBaseline='top';
+    ctx.fillText(sale.toLocaleString()+'원',tx,ty);
+  }
+}
+
+// ── 카드 렌더링 ───────────────────────────────────────────────────────────────
+function renderCard(ctx, x1,y1,x2,y2, products){
+  const cw=x2-x1, ch=y2-y1, pad=28;
+  rrect(ctx,x1,y1,cw,ch,CARD_R,WHITE);
+  const n=products.length; if(!n) return;
+
+  if(n===1){
+    const prod=products[0];
+    const imgW=Math.round(cw*0.40), imgH=ch-pad*2;
+    const ix=x1+pad, iy=y1+pad;
+
+    // 상품 이미지
+    const pimg=prodImages[prod._pid];
+    if(pimg) drawImage(ctx,pimg,ix,iy,imgW,imgH);
+    else drawPlaceholder(ctx,ix,iy,imgW,imgH);
+
+    // 뱃지
+    const badge=(prod.badge||'').trim();
+    if(badge){
+      const bf2='bold 22px "Noto Sans KR",sans-serif';
+      ctx.font=bf2;
+      const btw=ctx.measureText(badge).width;
+      const bph=32, bpw=btw+20;
+      rrect(ctx,ix,iy,bpw,bph,bph/2,ORANGE);
+      ctx.fillStyle=WHITE; ctx.textBaseline='middle';
+      ctx.fillText(badge,ix+10,iy+bph/2);
+    }
+
+    // 텍스트
+    const tx=ix+imgW+30, ty=y1+pad+8;
+    renderTextBlock(ctx,tx,ty,x2-tx-pad,prod,false);
+
+  } else {
+    const gap2=16;
+    const itemW=Math.floor((cw-pad*2-gap2*(n-1))/n);
+    const imgH2=Math.round(ch*0.50);
+
+    for(let i=0;i<n;i++){
+      const prod=products[i];
+      const ix=x1+pad+i*(itemW+gap2), iy=y1+pad;
+      const pimg=prodImages[prod._pid];
+      if(pimg) drawImage(ctx,pimg,ix,iy,itemW,imgH2);
+      else drawPlaceholder(ctx,ix,iy,itemW,imgH2);
+
+      const badge=(prod.badge||'').trim();
+      if(badge){
+        const bf2='bold 18px "Noto Sans KR",sans-serif';
+        ctx.font=bf2;
+        const btw=ctx.measureText(badge).width;
+        const bph=26, bpw=btw+16;
+        rrect(ctx,ix,iy,bpw,bph,bph/2,ORANGE);
+        ctx.fillStyle=WHITE; ctx.textBaseline='middle';
+        ctx.fillText(badge,ix+8,iy+bph/2);
+      }
+      renderTextBlock(ctx,ix,iy+imgH2+10,itemW,prod,true);
+    }
+  }
+}
+</script>
+
+<script>
+// ── 전체 렌더링 ───────────────────────────────────────────────────────────────
+async function render(){
+  await fontLoaded;
+  const canvas=document.getElementById('canvas');
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  // 배경
+  ctx.fillStyle=BG; ctx.fillRect(0,0,W,H);
+
+  // 헤더
+  renderHeader(ctx,
+    document.getElementById('period').value,
+    document.getElementById('brand').value);
+
+  // 카드 데이터 수집
+  const cards=collectCards();
+  const n=cards.length; if(!n) return;
+
+  const avail=H-HEADER_H-CARD_GAP-BOTTOM;
+  const cardH=Math.max(200,Math.min(Math.floor((avail-(n-1)*CARD_GAP)/n),400));
+
+  let cy=HEADER_H+CARD_GAP;
+  for(const card of cards){
+    renderCard(ctx,CARD_MX,cy,W-CARD_MX,cy+cardH,card.products);
+    cy+=cardH+CARD_GAP;
+  }
+}
+
+function scheduleRender(){
+  clearTimeout(timer);
+  timer=setTimeout(render,600);
+}
+
+// ── 데이터 수집 ───────────────────────────────────────────────────────────────
+function collectCards(){
+  const cards=[];
+  document.querySelectorAll('.card-block').forEach(block=>{
+    const prods=[];
+    block.querySelectorAll('.prod-row').forEach(row=>{
+      const pid=row.dataset.pid;
+      prods.push({
+        _pid:     pid,
+        name:     document.getElementById(`name-${pid}`)?.value||'',
+        color:    document.getElementById(`color-${pid}`)?.value||'',
+        badge:    document.getElementById(`badge-${pid}`)?.value||'',
+        discount: (parseFloat(document.getElementById(`disc-${pid}`)?.value)||0)/100,
+        original_price: parseInt(document.getElementById(`orig-${pid}`)?.value)||0,
+        sale_price:     parseInt(document.getElementById(`sale-${pid}`)?.value)||0,
+      });
+    });
+    if(prods.length) cards.push({products:prods});
+  });
+  return cards;
+}
+
+// ── 로고 ──────────────────────────────────────────────────────────────────────
+document.getElementById('logo-file').addEventListener('change',function(){
+  const file=this.files[0]; if(!file) return;
+  document.getElementById('logo-name').textContent=file.name;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{ logoImg=img; scheduleRender(); };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ── 카드/상품 관리 ────────────────────────────────────────────────────────────
+function addCard(){
+  if(document.querySelectorAll('.card-block').length>=10){
+    alert('카드는 최대 10장까지 가능합니다.'); return;
+  }
+  cardSeq++;
+  const cid=cardSeq;
+  const el=document.createElement('div');
+  el.className='card-block'; el.id=`card-${cid}`;
+  el.innerHTML=`
+    <div class="card-head">
+      <span class="card-head-title">카드 ${cid}</span>
+      <div class="card-head-btns">
+        <button class="btn-ap" onclick="addProd(${cid})">＋ 상품 추가</button>
+        <button class="btn btn-rd" onclick="delCard(${cid})">✕ 삭제</button>
+      </div>
+    </div>
+    <div class="card-body" id="cbody-${cid}"></div>`;
+  document.getElementById('cards').appendChild(el);
+  addProd(cid);
+}
+
+function delCard(cid){
+  document.getElementById(`card-${cid}`)?.remove();
+  scheduleRender();
+}
+
+function addProd(cid){
+  const body=document.getElementById(`cbody-${cid}`);
+  if(!body) return;
+  if(body.querySelectorAll('.prod-row').length>=3){
+    alert('카드당 상품은 최대 3개까지 가능합니다.'); return;
+  }
+  prodSeq++;
+  const pid=prodSeq;
+  const row=document.createElement('div');
+  row.className='prod-row'; row.id=`prod-${pid}`; row.dataset.pid=pid;
+  row.innerHTML=`
+    <div class="prod-img-col">
+      <div class="flbl">상품 이미지</div>
+      <label class="thumb" id="thumb-${pid}" for="imgf-${pid}">
+        <span style="font-size:22px">📷</span><span>클릭하여 선택</span>
+      </label>
+      <input type="file" id="imgf-${pid}" accept="image/*" style="display:none"
+             onchange="loadProdImg(${pid},this)">
+    </div>
+    <div class="prod-fields">
+      <div class="full"><div class="flbl">상품명 (줄바꿈: 엔터 또는 \\n)</div>
+        <input type="text" id="name-${pid}" placeholder="상품명" oninput="scheduleRender()"></div>
+      <div class="full"><div class="flbl">색상명</div>
+        <input type="text" id="color-${pid}" placeholder="색상명" oninput="scheduleRender()"></div>
+      <div class="full"><div class="flbl">뱃지 (예: 세트상품)</div>
+        <input type="text" id="badge-${pid}" placeholder="없으면 비워두기" oninput="scheduleRender()"></div>
+      <div><div class="flbl">할인율 (%)</div>
+        <input type="number" id="disc-${pid}" placeholder="58" min="0" max="100" oninput="scheduleRender()"></div>
+      <div><div class="flbl">정가 (원)</div>
+        <input type="number" id="orig-${pid}" placeholder="80000" oninput="scheduleRender()"></div>
+      <div><div class="flbl">할인가 (원)</div>
+        <input type="number" id="sale-${pid}" placeholder="34000" oninput="scheduleRender()"></div>
+    </div>
+    <div class="prod-del">
+      <button class="btn btn-rd" onclick="delProd(${pid})">✕</button>
+    </div>`;
+  body.appendChild(row);
+  scheduleRender();
+}
+
+function delProd(pid){
+  document.getElementById(`prod-${pid}`)?.remove();
+  delete prodImages[pid];
+  scheduleRender();
+}
+
+function loadProdImg(pid, input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      prodImages[pid]=img;
+      const thumb=document.getElementById(`thumb-${pid}`);
+      thumb.innerHTML=`<img src="${e.target.result}" alt="">`;
+      thumb.style.border='none';
+      scheduleRender();
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── 전체보기 / 다운로드 ───────────────────────────────────────────────────────
+function fullView(){
+  const canvas=document.getElementById('canvas');
+  const url=canvas.toDataURL('image/jpeg',0.95);
+  const w=window.open('','_blank','width=600,height=750');
+  w.document.write(`<html><body style="margin:0;background:#000;display:flex;justify-content:center">
+    <img src="${url}" style="max-height:100vh;max-width:100%"></body></html>`);
+}
+
+function download(){
+  const canvas=document.getElementById('canvas');
+  const a=document.createElement('a');
+  a.download='instagram_card.jpg';
+  a.href=canvas.toDataURL('image/jpeg',0.95);
+  a.click();
+}
+
+// ── 입력 감지 ─────────────────────────────────────────────────────────────────
+document.getElementById('period').addEventListener('input',scheduleRender);
+document.getElementById('brand').addEventListener('input',scheduleRender);
+
+// ── 초기화 ────────────────────────────────────────────────────────────────────
+addCard();
+render();
+</script>
+</body>
+</html>
